@@ -114,12 +114,15 @@ impl From<VirtPageNum> for VirtAddr {
     }
 }
 impl PhysAddr {
+    // get bottom addr of current page
     pub fn floor(&self) -> PhysPageNum {
         PhysPageNum(self.0 / PAGE_SIZE)
     }
+    // get top addr of current page
     pub fn ceil(&self) -> PhysPageNum {
         PhysPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE)
     }
+    // get addr offset(lower 12 bits)
     pub fn page_offset(&self) -> usize {
         self.0 & (PAGE_SIZE - 1)
     }
@@ -127,12 +130,14 @@ impl PhysAddr {
         self.page_offset() == 0
     }
 }
+// PhyAddr -> PhyPageNum: get page number
 impl From<PhysAddr> for PhysPageNum {
     fn from(v: PhysAddr) -> Self {
-        assert_eq!(v.page_offset(), 0);
+        assert_eq!(v.page_offset(), 0); // ?
         v.floor()
     }
 }
+// PhyPageNum -> PhyAddr: [page number, all 0]
 impl From<PhysPageNum> for PhysAddr {
     fn from(v: PhysPageNum) -> Self {
         Self(v.0 << PAGE_SIZE_BITS)
@@ -144,7 +149,7 @@ impl VirtPageNum {
         let mut vpn = self.0;
         let mut idx = [0usize; 3];
         for i in (0..3).rev() {
-            idx[i] = vpn & 511;
+            idx[i] = vpn & 511; // 511 = 0b111111111 (9 one)
             vpn >>= 9;
         }
         idx

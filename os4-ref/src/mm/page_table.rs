@@ -5,6 +5,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::*;
 
+// micro bitflag construct bit set using u8 type data
 bitflags! {
     /// page table entry flags
     pub struct PTEFlags: u8 {
@@ -28,6 +29,7 @@ pub struct PageTableEntry {
 
 impl PageTableEntry {
     pub fn new(ppn: PhysPageNum, flags: PTEFlags) -> Self {
+        // fill entry with ppn and flags
         PageTableEntry {
             bits: ppn.0 << 10 | flags.bits as usize,
         }
@@ -35,12 +37,15 @@ impl PageTableEntry {
     pub fn empty() -> Self {
         PageTableEntry { bits: 0 }
     }
+    // [53:10] in entry
     pub fn ppn(&self) -> PhysPageNum {
         (self.bits >> 10 & ((1usize << 44) - 1)).into()
     }
+    // [7:0] in entry and return as PTEFlags
     pub fn flags(&self) -> PTEFlags {
         PTEFlags::from_bits(self.bits as u8).unwrap()
     }
+    // evaluate flag
     pub fn is_valid(&self) -> bool {
         (self.flags() & PTEFlags::V) != PTEFlags::empty()
     }
@@ -73,6 +78,7 @@ impl PageTable {
     /// Temporarily used to get arguments from user space.
     pub fn from_token(satp: usize) -> Self {
         Self {
+            // get last 43 bits of satp
             root_ppn: PhysPageNum::from(satp & ((1usize << 44) - 1)),
             frames: Vec::new(),
         }
@@ -82,12 +88,15 @@ impl PageTable {
         let mut ppn = self.root_ppn;
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter_mut().enumerate() {
+            // ppn.get_pte_array() get pte as array stored in page ppn
+            // *idx 
             let pte = &mut ppn.get_pte_array()[*idx];
-            if i == 2 {
+            if i == 2 { // pte that stores ppn
                 result = Some(pte);
                 break;
             }
             if !pte.is_valid() {
+                // get a frame to store page
                 let frame = frame_alloc().unwrap();
                 *pte = PageTableEntry::new(frame.ppn, PTEFlags::V);
                 self.frames.push(frame);

@@ -18,7 +18,7 @@ impl FrameTracker {
         // page cleaning
         let bytes_array = ppn.get_bytes_array();
         for i in bytes_array {
-            *i = 0;
+            *i = 0; // ste all bytes in page to 0
         }
         Self { ppn }
     }
@@ -44,8 +44,10 @@ trait FrameAllocator {
 
 /// an implementation for frame allocator
 pub struct StackFrameAllocator {
+    // [current, end) is never been allocated
     current: usize,
     end: usize,
+    // recycled 'ppn's
     recycled: Vec<usize>,
 }
 
