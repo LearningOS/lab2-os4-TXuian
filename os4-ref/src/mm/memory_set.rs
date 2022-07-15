@@ -229,6 +229,7 @@ pub struct MapArea {
 }
 
 impl MapArea {
+    // init a new map_area
     pub fn new(
         start_va: VirtAddr,
         end_va: VirtAddr,
@@ -244,6 +245,7 @@ impl MapArea {
             map_perm,
         }
     }
+    // map_one() alloc a frame and  make it under map_area's management
     pub fn map_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
         let ppn: PhysPageNum;
         match self.map_type {
@@ -251,12 +253,15 @@ impl MapArea {
                 ppn = PhysPageNum(vpn.0);
             }
             MapType::Framed => {
+                // alloc a free frame(page)
                 let frame = frame_alloc().unwrap();
                 ppn = frame.ppn;
+                // bind frame to map_area
                 self.data_frames.insert(vpn, frame);
             }
         }
         let pte_flags = PTEFlags::from_bits(self.map_perm.bits).unwrap();
+        // store map from vpn -> ppn in page_table
         page_table.map(vpn, ppn, pte_flags);
     }
     #[allow(unused)]
@@ -270,6 +275,7 @@ impl MapArea {
         }
         page_table.unmap(vpn);
     }
+    // make all page within range allocated and under managed
     pub fn map(&mut self, page_table: &mut PageTable) {
         for vpn in self.vpn_range {
             self.map_one(page_table, vpn);
@@ -281,6 +287,7 @@ impl MapArea {
             self.unmap_one(page_table, vpn);
         }
     }
+    // copy data to self map_area
     /// data: start-aligned but maybe with shorter length
     /// assume that all frames were cleared before
     pub fn copy_data(&mut self, page_table: &mut PageTable, data: &[u8]) {
@@ -288,7 +295,7 @@ impl MapArea {
         let mut start: usize = 0;
         let mut current_vpn = self.vpn_range.get_start();
         let len = data.len();
-        loop {
+        loop { // copy one page in one loop
             let src = &data[start..len.min(start + PAGE_SIZE)];
             let dst = &mut page_table
                 .translate(current_vpn)

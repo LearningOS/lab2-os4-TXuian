@@ -65,12 +65,14 @@ impl FrameAllocator for StackFrameAllocator {
             recycled: Vec::new(),
         }
     }
-    fn alloc(&mut self) -> Option<PhysPageNum> {
+    fn alloc(&mut self) -> Option<PhysPageNum> { 
         if let Some(ppn) = self.recycled.pop() {
+            // get a free page
             Some(ppn.into())
-        } else if self.current == self.end {
+        } else if self.current == self.end { // no free page available
             None
         } else {
+            // get a free page 
             self.current += 1;
             Some((self.current - 1).into())
         }
