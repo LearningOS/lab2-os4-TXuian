@@ -59,6 +59,21 @@ impl MemorySet {
             None,
         );
     }
+    // assume that all page assigned are allocated
+    pub fn delete_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) {
+        let mut current_vpn = start_va.floor();
+        let end_vpn = end_va.ceil();
+        while current_vpn.0 < end_vpn.0 {
+            // unmap current vpn
+            for ma in &mut self.areas {
+                if ma.vpn_range.covers(current_vpn) {
+                    ma.unmap_one(&mut self.page_table, current_vpn);
+                    break;
+                }
+            }
+            current_vpn.step();
+        }     
+    }
     // 
     fn push(&mut self, mut map_area: MapArea, data: Option<&[u8]>) {
         map_area.map(&mut self.page_table);

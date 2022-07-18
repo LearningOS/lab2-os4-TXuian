@@ -114,6 +114,9 @@ impl From<VirtPageNum> for VirtAddr {
     }
 }
 impl PhysAddr {
+    pub fn get_mut<T>(&self) -> &'static mut T {
+        unsafe { (self.0 as *mut T).as_mut().unwrap() }
+    }
     // get bottom addr of current page
     pub fn floor(&self) -> PhysPageNum {
         PhysPageNum(self.0 / PAGE_SIZE)
@@ -202,6 +205,9 @@ where
     }
     pub fn get_end(&self) -> T {
         self.r
+    }
+    pub fn covers(&self, x: T) -> bool {
+        return self.get_start() <= x && x <= self.get_end();
     }
 }
 impl<T> IntoIterator for SimpleRange<T>
